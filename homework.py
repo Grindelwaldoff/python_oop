@@ -28,7 +28,7 @@ class InfoMessage:
 class Training:
     """Базовый класс тренировки."""
     LEN_STEP = 0.65
-    M_IN_KM = 1000
+    m_in_km = 1000
     training_type: str = ''
 
     def __init__(self,
@@ -43,7 +43,7 @@ class Training:
 
     def get_distance(self) -> float:
         """Получить дистанцию в км."""
-        return self.action * self.LEN_STEP / self.M_IN_KM
+        return self.action * self.LEN_STEP / self.m_in_km
 
     def get_mean_speed(self) -> float:
         """Получить среднюю скорость движения."""
@@ -53,7 +53,24 @@ class Training:
         """Получить количество затраченных калорий."""
         return self.get_spent_calories()
 
-    def show_training_info(self):  # мне в проверке выдает ошибку: show_training_info() должен возвращать объект класса InfoMessage, когда я исправляю эту ошибку и запускаю проверку заново, оно говорит, что get_message должно возвращать str.... Вопрос как мне сделать так чтобы show_training_info() возвращала InfoMessage, обращаясь к get_message(), которая в свою очередь должна возвращать строку???
+# мне в проверке выдает ошибку:
+# show_training_info() должен возвращать
+# объект класса InfoMessage, когда я
+# исправляю эту ошибку и запускаю проверку
+# заново,
+# оно говорит, что get_message должно
+# возвращать str.... Вопрос как мне
+# сделать так чтобы show_training_info()
+# возвращала InfoMessage, обращаясь к
+# get_message(), которая в свою очередь
+# должна возвращать строку???
+# Еще непонятно почему ваш файл выдает
+# ошибку, если M_IN_KM написать по
+# правилам flake8, а авто проверка
+# дз выдает ошибку если исправить
+# это.... нелогично...
+
+    def show_training_info(self):
         """Вернуть информационное сообщение о выполненной тренировке."""
         mes = InfoMessage(self.training_type, self.duration,
                           self.get_distance(),
@@ -74,10 +91,10 @@ class Running(Training):
         coeff_calorie_2: int = 20
         avg_speed: float = self.get_mean_speed()
         time = self.duration * 60
-        M_IN_KM = 1000
+        m_in_km = 1000
         res: float = (coeff_calorie_1 * avg_speed - coeff_calorie_2)
 
-        return res * self.weight / M_IN_KM * time
+        return res * self.weight / m_in_km * time
 
     def show_training_info(self) -> str:
         return super().show_training_info()
@@ -112,7 +129,7 @@ class Swimming(Training):
     """Тренировка: плавание."""
     training_type = 'Swimming'
     LEN_STEP = 1.38
-    M_IN_KM = 1000
+    m_in_km = 1000
 
     def __init__(self, action, duration, weight, length_pool: int,
                  count_pool: int, ) -> None:
@@ -121,11 +138,11 @@ class Swimming(Training):
         self.count_pool = count_pool
 
     def get_distance(self) -> float:
-        return self.action * self.LEN_STEP / self.M_IN_KM
+        return self.action * self.LEN_STEP / self.m_in_km
 
     def get_mean_speed(self) -> float:
         pool_par = self.length_pool * self.count_pool
-        return pool_par / self.M_IN_KM / self.duration
+        return pool_par / self.m_in_km / self.duration
 
     def get_spent_calories(self) -> float:
         avg_speed = self.get_mean_speed()
