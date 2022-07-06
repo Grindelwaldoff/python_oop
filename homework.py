@@ -1,44 +1,39 @@
-from __future__ import annotations
+from dataclasses import dataclass
+from typing import Any, List
 
 
-class InfoMessage:
+@dataclass
+class TrainingParameters:
+    action: int
+    duration: int
+    weight: int
+
+
+@dataclass
+class TrainingRes:
+    training_type: str
+    duration: float
+    distance: float
+    speed: float
+    calories: float
+
+
+class InfoMessage(TrainingRes):
     """Информационное сообщение о тренировке."""
-    def __init__(self,
-                 training_type: str,
-                 duration: float,
-                 distance: float,
-                 speed: float,
-                 calories: float,
-                 ) -> None:
-
-        self.type = training_type
-        self.duration = duration
-        self.distance = distance
-        self.speed = speed
-        self.calories = calories
-
     def get_message(self) -> str:
-        return (f'Тип тренировки: {self.type}; Длительность: '
-                f'{self.duration:.3f} ч.; Дистанция: {self.distance:.3f} '
-                f'км; Ср. скорость: {self.speed:.3f} км/ч; Потрачено ккал:'
-                f' {self.calories:.3f}.')
+        return (f'Тип тренировки: {self.training_type}; '
+                f'Длительность: {self.duration:.3f} ч.; '
+                f'Дистанция: {self.distance:.3f} км; '
+                f'Ср. скорость: {self.speed:.3f} км/ч; '
+                f'Потрачено ккал: {self.calories:.3f}.')
 
 
-class Training:
+class Training(TrainingParameters):
     """Базовый класс тренировки."""
-    LEN_STEP = 0.65
+    HOUR_IN_MIN = 60
+    LEN_STEP: float = 0.65 #константа: длина шага
     M_IN_KM = 1000
     training_type: str = ''
-
-    def __init__(self,
-                 action: int,
-                 duration: int,
-                 weight: int,
-                 ) -> None:
-
-        self.action = action
-        self.duration = duration
-        self.weight = weight
 
     def get_distance(self) -> float:
         """Получить дистанцию в км."""
@@ -48,9 +43,13 @@ class Training:
         """Получить среднюю скорость движения."""
         return self.get_distance() / self.duration
 
-    def get_spent_calories(self) -> float:
+    def get_spent_calories(self) -> Any:
         """Получить количество затраченных калорий."""
-        return self.get_spent_calories()
+        try:
+            return self.get_spent_calories()
+        except Exception:
+            print('Подсчет каллорий для данного вида тренировки пока недоступен.')
+            return 0
 
     def show_training_info(self) -> InfoMessage:
         """Вернуть информационное сообщение о выполненной тренировке."""
@@ -61,26 +60,22 @@ class Training:
 
 class Running(Training):
     """Тренировка: бег."""
+    CONST_1: int = 18
+    CONST_2: int = 20
     training_type = 'Running'
 
-    def __init__(self, action, duration, weight) -> None:
-        super().__init__(action, duration, weight)
-
     def get_spent_calories(self) -> float:
-        coeff_calorie_1: int = 18
-        coeff_calorie_2: int = 20
-        avg_speed: float = self.get_mean_speed()
-        time = self.duration * 60
-        res: float = (coeff_calorie_1 * avg_speed - coeff_calorie_2)
+        time = self.duration * self.HOUR_IN_MIN
+        res: float = (self.CONST_1 * self.get_mean_speed() - self.CONST_2)
 
         return res * self.weight / self.M_IN_KM * time
-
-    def show_training_info(self) -> InfoMessage:
-        return super().show_training_info()
 
 
 class SportsWalking(Training):
     """Тренировка: спортивная ходьба."""
+    CONST_1: float = 0.035
+    CONST_2: float = 0.029
+
     training_type = 'SportsWalking'
 
     def __init__(self,
@@ -92,22 +87,18 @@ class SportsWalking(Training):
         self.height = height
 
     def get_spent_calories(self) -> float:
-        coeff_1: float = 0.035
-        coeff_2: float = 0.029
+
         avg_speed: float = self.get_mean_speed()
         part: float = avg_speed**2 // self.height
-        res: float = (coeff_1 * self.weight + part * coeff_2 * self.weight)
+        res: float = (self.CONST_1 * self.weight + part * self.CONST_2 * self.weight)
 
-        return res * self.duration * 60
-
-    def show_training_info(self) -> InfoMessage:
-        return super().show_training_info()
+        return res * self.duration * self.HOUR_IN_MIN
 
 
 class Swimming(Training):
     """Тренировка: плавание."""
     training_type = 'Swimming'
-    LEN_STEP = 1.38
+    LEN_STEP: float = 1.38 # константа: расстояние проходимое за один гребок
 
     def __init__(self, action, duration, weight, length_pool: int,
                  count_pool: int, ) -> None:
@@ -126,34 +117,40 @@ class Swimming(Training):
         avg_speed = self.get_mean_speed()
         return (avg_speed + 1.1) * 2 * self.weight
 
-    def show_training_info(self) -> InfoMessage:
-        return super().show_training_info()
 
-
-def read_package(workout_type: str, data: list) -> Training:
+def read_package(workout_type: str, data: List[int]) -> Any:
     """Прочитать данные полученные от датчиков."""
     action = data[0]
     duration = data[1]
     weight = data[2]
-    if workout_type == 'SWM':
-        length_pool = data[3]
-        count_pool = data[4]
-        return Swimming(action, duration, weight, length_pool, count_pool)
 
-    elif workout_type == 'WLK':
-        height = data[3]
-        return SportsWalking(action, duration, weight, height)
+    trainings_type = {
+        'SWM': Swimming(action, duration,
+                        weight,
+                        length_pool=data[-2],
+                        count_pool=data[-1]),
+        
+        'WLK': SportsWalking(action,
+                             duration,
+                             weight,
+                             height=data[-2]),
+        
+        'RUN': Running(action, duration, weight)
+    }
 
-    return Running(action, duration, weight)
-
+    try:
+        return trainings_type[workout_type]
+    except Exception:
+         return print('Данная тренировка пока не поддерживается.')
+    
 
 def main(training: Training) -> None:
     """Главная функция."""
-    self = training.show_training_info()
-    print(f'Тип тренировки: {self.type}; Длительность: '
-          f'{self.duration:.3f} ч.; Дистанция: {self.distance:.3f} '
-          f'км; Ср. скорость: {self.speed:.3f} км/ч; Потрачено ккал:'
-          f' {self.calories:.3f}.')
+    try:
+        res = training.show_training_info()
+        print(res.get_message())
+    except Exception:
+        print('')
 
 
 if __name__ == '__main__':
