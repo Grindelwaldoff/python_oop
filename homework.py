@@ -31,7 +31,7 @@ class InfoMessage(TrainingRes):
 class Training(TrainingParameters):
     """Базовый класс тренировки."""
     HOUR_IN_MIN = 60
-    LEN_STEP: float = 0.65 #константа: длина шага
+    LEN_STEP: float = 0.65  # константа: длина шага
     M_IN_KM = 1000
     training_type: str = ''
 
@@ -48,7 +48,8 @@ class Training(TrainingParameters):
         try:
             return self.get_spent_calories()
         except Exception:
-            print('Подсчет каллорий для данного вида тренировки пока недоступен.')
+            print('Подсчет каллорий для данного вида '
+                  'тренировки пока недоступен.')
             return 0
 
     def show_training_info(self) -> InfoMessage:
@@ -90,7 +91,8 @@ class SportsWalking(Training):
 
         avg_speed: float = self.get_mean_speed()
         part: float = avg_speed**2 // self.height
-        res: float = (self.CONST_1 * self.weight + part * self.CONST_2 * self.weight)
+        res: float = (self.CONST_1 * self.weight +
+                      part * self.CONST_2 * self.weight)
 
         return res * self.duration * self.HOUR_IN_MIN
 
@@ -98,7 +100,7 @@ class SportsWalking(Training):
 class Swimming(Training):
     """Тренировка: плавание."""
     training_type = 'Swimming'
-    LEN_STEP: float = 1.38 # константа: расстояние проходимое за один гребок
+    LEN_STEP: float = 1.38  # константа: расстояние проходимое за один гребок
 
     def __init__(self, action, duration, weight, length_pool: int,
                  count_pool: int, ) -> None:
@@ -129,20 +131,20 @@ def read_package(workout_type: str, data: List[int]) -> Any:
                         weight,
                         length_pool=data[-2],
                         count_pool=data[-1]),
-        
+
         'WLK': SportsWalking(action,
                              duration,
                              weight,
                              height=data[-2]),
-        
+
         'RUN': Running(action, duration, weight)
     }
 
     try:
         return trainings_type[workout_type]
     except Exception:
-         return print('Данная тренировка пока не поддерживается.')
-    
+        return print('Данная тренировка пока не поддерживается.')
+
 
 def main(training: Training) -> None:
     """Главная функция."""
