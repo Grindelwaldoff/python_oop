@@ -91,8 +91,7 @@ class SportsWalking(Training):
 
         avg_speed: float = self.get_mean_speed()
         part: float = avg_speed**2 // self.height
-        res: float = (self.CONST_1 * self.weight +
-                      part * self.CONST_2 * self.weight)
+        res = self.CONST_1 * self.weight + part * self.CONST_2 * self.weight
 
         return res * self.duration * self.HOUR_IN_MIN
 
