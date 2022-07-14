@@ -83,7 +83,7 @@ class SportsWalking(Training):
                  action: int,
                  duration: int,
                  weight: int,
-                 height: int,):
+                 height: int):
         super().__init__(action, duration, weight)
         self.height = height
 
