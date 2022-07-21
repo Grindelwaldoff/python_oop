@@ -1,25 +1,22 @@
-from dataclasses import dataclass
 from typing import Any, List
 
 
-@dataclass
-class TrainingParameters:
-    action: int
-    duration: int
-    weight: int
-
-
-@dataclass
-class TrainingRes:
-    training_type: str
-    duration: float
-    distance: float
-    speed: float
-    calories: float
-
-
-class InfoMessage(TrainingRes):
+class InfoMessage():
     """Информационное сообщение о тренировке."""
+    def __init__(self,
+                 training_type: str,
+                 duration: float,
+                 distance: float,
+                 speed: float,
+                 calories: float,
+                 ) -> None:
+
+        self.training_type = training_type
+        self.duration = duration
+        self.distance = distance
+        self.speed = speed
+        self.calories = calories
+
     def get_message(self) -> str:
         return (f'Тип тренировки: {self.training_type}; '
                 f'Длительность: {self.duration:.3f} ч.; '
@@ -28,12 +25,21 @@ class InfoMessage(TrainingRes):
                 f'Потрачено ккал: {self.calories:.3f}.')
 
 
-class Training(TrainingParameters):
+class Training():
     """Базовый класс тренировки."""
-    HOUR_IN_MIN = 60
+    HOUR_IN_MIN = 60  # константа для перевода часов в минуты
     LEN_STEP: float = 0.65  # константа: длина шага
     M_IN_KM = 1000
-    training_type: str = ''
+
+    def __init__(self,
+                 action: int,
+                 duration: int,
+                 weight: int,
+                 ) -> None:
+
+        self.action = action
+        self.duration = duration
+        self.weight = weight
 
     def get_distance(self) -> float:
         """Получить дистанцию в км."""
@@ -48,26 +54,29 @@ class Training(TrainingParameters):
         try:
             return self.get_spent_calories()
         except Exception:
-            print('Подсчет каллорий для данного вида '
-                  'тренировки пока недоступен.')
-            return 0
+            raise NotImplementedError
 
     def show_training_info(self) -> InfoMessage:
         """Вернуть информационное сообщение о выполненной тренировке."""
-        return InfoMessage(self.training_type, self.duration,
+        return InfoMessage(str(self), self.duration,
                            self.get_distance(),
                            self.get_mean_speed(), self.get_spent_calories())
 
 
 class Running(Training):
     """Тренировка: бег."""
-    CONST_1: int = 18
-    CONST_2: int = 20
+    # коэфициенты необходимые для подсчета каллорий потраченных во время бега
+    PHYSICAL_ACTIVITY_COEF: int = 18  # коэффициент физической активности
+    CALORIE_COEF: int = 20  # еще один коэффициент физической активности
     training_type = 'Running'
+
+    def __str__(self):
+        return 'Running'
 
     def get_spent_calories(self) -> float:
         time = self.duration * self.HOUR_IN_MIN
-        res: float = (self.CONST_1 * self.get_mean_speed() - self.CONST_2)
+        res: float = (self.PHYSICAL_ACTIVITY_COEF * self.get_mean_speed()
+                      - self.CALORIE_COEF)
 
         return res * self.weight / self.M_IN_KM * time
 
@@ -77,7 +86,8 @@ class SportsWalking(Training):
     CONST_1: float = 0.035
     CONST_2: float = 0.029
 
-    training_type = 'SportsWalking'
+    def __str__(self):
+        return 'SportsWalking'
 
     def __init__(self,
                  action: int,
@@ -88,9 +98,7 @@ class SportsWalking(Training):
         self.height = height
 
     def get_spent_calories(self) -> float:
-
-        avg_speed: float = self.get_mean_speed()
-        part: float = avg_speed**2 // self.height
+        part: float = self.get_mean_speed()**2 // self.height
         res = self.CONST_1 * self.weight + part * self.CONST_2 * self.weight
 
         return res * self.duration * self.HOUR_IN_MIN
@@ -98,8 +106,10 @@ class SportsWalking(Training):
 
 class Swimming(Training):
     """Тренировка: плавание."""
-    training_type = 'Swimming'
     LEN_STEP: float = 1.38  # константа: расстояние проходимое за один гребок
+
+    def __str__(self):
+        return 'Swimming'
 
     def __init__(self, action, duration, weight, length_pool: int,
                  count_pool: int, ) -> None:
@@ -121,28 +131,26 @@ class Swimming(Training):
 
 def read_package(workout_type: str, data: List[int]) -> Any:
     """Прочитать данные полученные от датчиков."""
-    action = data[0]
-    duration = data[1]
-    weight = data[2]
-
     trainings_type = {
-        'SWM': Swimming(action, duration,
-                        weight,
-                        length_pool=data[-2],
-                        count_pool=data[-1]),
-
-        'WLK': SportsWalking(action,
-                             duration,
-                             weight,
-                             height=data[-2]),
-
-        'RUN': Running(action, duration, weight)
+        'SWM': Swimming,
+        'WLK': SportsWalking,
+        'RUN': Running
     }
 
-    try:
-        return trainings_type[workout_type]
-    except Exception:
-        return print('Данная тренировка пока не поддерживается.')
+    check = 0
+    while check == 0:
+        for i in trainings_type.keys():
+            if workout_type == i and i == 'SWM':
+                check = 1
+                return trainings_type[i](*data)
+            elif workout_type == i and i == 'WLK':
+                check = 1
+                return trainings_type[i](*data)
+            elif workout_type == i and i == 'RUN':
+                check = 1
+                return trainings_type[i](*data)
+
+        raise ValueError
 
 
 def main(training: Training) -> None:
