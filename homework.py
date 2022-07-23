@@ -122,9 +122,7 @@ class Swimming(Training):
 
 def read_package(workout_type: str, data: List[int]) -> Any:
     """Прочитать данные полученные от датчиков."""
-    trainings_type: Dict[str, Any] = {  # поставить аннотацию Training вместо
-                                        # Any не получается, выдает ошибку,
-                                        # хотя код работает
+    trainings_type: Dict[str, Any] = {
         'SWM': Swimming,
         'WLK': SportsWalking,
         'RUN': Running
