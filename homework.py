@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Type
 
 
 @dataclass
@@ -45,7 +45,8 @@ class Training():
 
     def get_spent_calories(self):
         """Получить количество затраченных калорий."""
-        raise NotImplementedError('Функция не переопределена,'
+        raise NotImplementedError(f'В классе {str(self)} не переопределена'
+                                  'функция подсчета каллорий,'
                                   'данный тип тренировки не поддерживается')
 
     def show_training_info(self) -> InfoMessage:
@@ -63,13 +64,15 @@ class Running(Training):
 
     def __str__(self):
         return 'Running'
+# что значит нигде не используем?
+# он передается в infomessage,
+# а теперь еще используется для вывода ошибки
+# без негатива
 
     def get_spent_calories(self) -> float:
-        res: float = (self.PHYSICAL_ACTIVITY_COEF * self.get_mean_speed()
-                      - self.CALORIE_COEF)
-
-        return (res * self.weight / self.M_IN_KM * self.duration
-                * self.HOUR_IN_MIN)
+        return ((self.PHYSICAL_ACTIVITY_COEF * self.get_mean_speed()
+                 - self.CALORIE_COEF) * self.weight / self.M_IN_KM
+                * self.duration * self.HOUR_IN_MIN)
 
 
 class SportsWalking(Training):
@@ -89,14 +92,16 @@ class SportsWalking(Training):
         self.height = height
 
     def get_spent_calories(self) -> float:
-        part: float = self.get_mean_speed()**2 // self.height
-        res = (self.ACTIVITY_LEVEL_COEF * self.weight + part
-               * self.TRAINING_COEF * self.weight)
-        return res * self.duration * self.HOUR_IN_MIN
+        return ((self.ACTIVITY_LEVEL_COEF * self.weight
+                + (self.get_mean_speed()**2 // self.height)
+                * self.TRAINING_COEF * self.weight)
+                * self.duration * self.HOUR_IN_MIN)
 
 
 class Swimming(Training):
     """Тренировка: плавание."""
+    PHYSICAL_ACTIVITY_COEF: float = 1.1  # коэффициент физической активности
+    CALORIE_COEF: int = 2  # еще один коэффициент физической активности
     LEN_STEP: float = 1.38  # константа: расстояние проходимое за один гребок
 
     def __str__(self):
@@ -116,31 +121,23 @@ class Swimming(Training):
         return pool_par / self.M_IN_KM / self.duration
 
     def get_spent_calories(self) -> float:
-        avg_speed = self.get_mean_speed()
-        return (avg_speed + 1.1) * 2 * self.weight
+        return ((self.get_mean_speed() + self.PHYSICAL_ACTIVITY_COEF)
+                * self.CALORIE_COEF * self.weight)
 
 
 def read_package(workout_type: str, data: List[int]) -> Any:
     """Прочитать данные полученные от датчиков."""
-    trainings_type: Dict[str, Any] = {
+    trainings_type: Dict[str, Type] = {
         'SWM': Swimming,
         'WLK': SportsWalking,
         'RUN': Running
     }
 
-    check = 0
-    while check == 0:
-        if workout_type in trainings_type and workout_type == 'SWM':
-            check = 1
-            return trainings_type[workout_type](*data)
-        elif workout_type in trainings_type and workout_type == 'WLK':
-            check = 1
-            return trainings_type[workout_type](*data)
-        elif workout_type in trainings_type and workout_type == 'RUN':
-            check = 1
-            return trainings_type[workout_type](*data)
-
-        raise ValueError
+    if workout_type in trainings_type:
+        return trainings_type[workout_type](*data)
+    else:
+        raise ValueError(f'Данный тип тренировки "{workout_type}"'
+                         ' не поддерживается.')
 
 
 def main(training: Training) -> None:
