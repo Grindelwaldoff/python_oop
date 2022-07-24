@@ -64,15 +64,12 @@ class Running(Training):
 
     def __str__(self):
         return 'Running'
-# что значит нигде не используем?
-# он передается в infomessage,
-# а теперь еще используется для вывода ошибки
-# без негатива
 
     def get_spent_calories(self) -> float:
         return ((self.PHYSICAL_ACTIVITY_COEF * self.get_mean_speed()
-                 - self.CALORIE_COEF) * self.weight / self.M_IN_KM
-                * self.duration * self.HOUR_IN_MIN)
+                - self.CALORIE_COEF)
+                * self.weight / self.M_IN_KM * self.duration
+                * self.HOUR_IN_MIN)
 
 
 class SportsWalking(Training):
@@ -117,8 +114,8 @@ class Swimming(Training):
         return self.action * self.LEN_STEP / self.M_IN_KM
 
     def get_mean_speed(self) -> float:
-        pool_par = self.length_pool * self.count_pool
-        return pool_par / self.M_IN_KM / self.duration
+        return ((self.length_pool * self.count_pool) / self.M_IN_KM
+                / self.duration)
 
     def get_spent_calories(self) -> float:
         return ((self.get_mean_speed() + self.PHYSICAL_ACTIVITY_COEF)
@@ -127,7 +124,7 @@ class Swimming(Training):
 
 def read_package(workout_type: str, data: List[int]) -> Any:
     """Прочитать данные полученные от датчиков."""
-    trainings_type: Dict[str, Type] = {
+    trainings_type: Dict[str, Type[Training]] = {
         'SWM': Swimming,
         'WLK': SportsWalking,
         'RUN': Running
@@ -135,15 +132,15 @@ def read_package(workout_type: str, data: List[int]) -> Any:
 
     if workout_type in trainings_type:
         return trainings_type[workout_type](*data)
-    else:
-        raise ValueError(f'Данный тип тренировки "{workout_type}"'
-                         ' не поддерживается.')
+
+    raise ValueError(f'Данный тип тренировки "{workout_type}"'
+                     ' не поддерживается.')
 
 
 def main(training: Training) -> None:
     """Главная функция."""
-    res = training.show_training_info()
-    print(res.get_message())
+    get_training_info = training.show_training_info()
+    print(get_training_info.get_message())
 
 
 if __name__ == '__main__':
